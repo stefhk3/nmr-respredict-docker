@@ -723,7 +723,7 @@ def conf_not_null(mol, conf_i):
 
 
 def get_nos_coords(mol, conf_i):
-    conformer = mol.GetConformers()[conf_i]
+    conformer = mol.GetConformer(conf_i.item())
     coord_objs = [conformer.GetAtomPosition(i) for i in  range(mol.GetNumAtoms())]
     coords = np.array([(c.x, c.y, c.z) for c in coord_objs])
     atomic_nos = np.array([a.GetAtomicNum() for a in mol.GetAtoms()]).astype(int)
