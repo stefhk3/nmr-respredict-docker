@@ -16,15 +16,15 @@ RUN python3 -m pip install -U pip
 
 RUN pip3 install rdkit
 
-RUN conda install scikit-learn
-RUN conda install numba
-RUN conda install numpy
-RUN conda install tqdm
-RUN conda install networkx
-RUN conda install click
-RUN conda install pandas
-RUN conda install pyarrow
-RUN conda install pytorch
+RUN conda install -y scikit-learn && \
+    numba && \
+    numpy && \
+    tqdm && \
+    networkx && \
+    click && \
+    pandas && \
+    pyarrow && \
+    pytorch
 
 COPY . /nmr-respredict
 WORKDIR /nmr-respredict
