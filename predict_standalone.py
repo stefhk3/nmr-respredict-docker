@@ -1,7 +1,6 @@
 from rdkit import Chem
 import numpy as np
 from datetime import datetime
-import click
 import pickle
 import pandas as pd
 import time
@@ -16,6 +15,7 @@ import io
 import gzip
 import predwrap
 import os
+from io import StringIO
 
 warnings.filterwarnings("ignore")
 
@@ -110,24 +110,23 @@ def s3_split(url):
     key = o.path.lstrip('/')
     return bucket, key
 
-@click.command()
-@click.option('--filename', help='filename of file to read, or stdin if unspecified', default=None)
-@click.option('--format', help='file format (sdf, rdkit)', default='sdf', 
-              type=click.Choice(['rdkit', 'sdf'], case_sensitive=False))
-@click.option('--pred', help='Nucleus (1H or 13C) or coupling (coupling)', default='13C', 
-              type=click.Choice(['1H', '13C', 'coupling'], case_sensitive=True))
-@click.option('--model_meta_filename')
-@click.option('--model_checkpoint_filename')
-@click.option('--print_data', default=None, help='print the smiles/fingerprint of the data used for train or test') 
-@click.option('--output', default=None)
-@click.option('--num_data_workers', default=0, type=click.INT)
-@click.option('--cuda/--no-cuda', default=True)
-@click.option("--version", default=False, is_flag=True)
-@click.option('--sanitize/--no-sanitize', help="sanitize the input molecules", default=True)
-@click.option('--addhs', help="Add Hs to the input molecules", default=False)
-@click.option('--skip-molecule-errors/--no-skip-molecule-errors', help="skip any errors", default=True)
-def predict(filename, format, pred, model_meta_filename, 
-            model_checkpoint_filename, cuda=False, 
+#@click.option('--filename', help='filename of file to read, or stdin if unspecified', default=None)
+#@click.option('--format', help='file format (sdf, rdkit)', default='sdf', 
+#              type=click.Choice(['rdkit', 'sdf'], case_sensitive=False))
+#@click.option('--pred', help='Nucleus (1H or 13C) or coupling (coupling)', default='13C', 
+#              type=click.Choice(['1H', '13C', 'coupling'], case_sensitive=True))
+#@click.option('--model_meta_filename')
+#@click.option('--model_checkpoint_filename')
+#@click.option('--print_data', default=None, help='print the smiles/fingerprint of the data used for train or test') 
+#@click.option('--output', default=None)
+#@click.option('--num_data_workers', default=0, type=click.INT)
+#@click.option('--cuda/--no-cuda', default=True)
+#@click.option("--version", default=False, is_flag=True)
+#@click.option('--sanitize/--no-sanitize', help="sanitize the input molecules", default=True)
+#@click.option('--addhs', help="Add Hs to the input molecules", default=False)
+#@click.option('--skip-molecule-errors/--no-skip-molecule-errors', help="skip any errors", default=True)
+def predict(filecontent, format, pred, model_meta_filename=None, 
+            model_checkpoint_filename=None, cuda=False, 
             output=None, sanitize=True, addhs=True,
             print_data = None, version=False,
             skip_molecule_errors=True, num_data_workers=0):
@@ -164,22 +163,9 @@ def predict(filename, format, pred, model_meta_filename,
 
     input_fileobj = None
 
-    if filename is not None and filename.startswith("s3://") :
-        import boto3 
-        bucket, key = s3_split(filename)
-        s3 = boto3.client('s3')
-        input_fileobj = io.BytesIO()
-        s3.download_fileobj(bucket, key, input_fileobj)
-        input_fileobj.seek(0)
-                
-            
     if format == 'sdf':
-        if filename is None:
-            mol_supplier = Chem.ForwardSDMolSupplier(sys.stdin.buffer)
-        elif input_fileobj is not None:
-            mol_supplier = Chem.ForwardSDMolSupplier(input_fileobj)
-        else:
-            mol_supplier = Chem.SDMolSupplier(filename)
+        mol_supplier = Chem.SDMolSupplier()
+        mol_supplier.SetData(filecontent)
     elif format == 'rdkit':
         if filename is None:
             bin_data = sys.stdin.buffer.read()
@@ -236,4 +222,4 @@ def predict(filename, format, pred, model_meta_filename,
 
 
 if __name__ == "__main__":
-    predict()
+    predict("\n  CDK     09072315522D\nnmrshiftdb2 60015778\n 27 28  0  0  0  0  0  0  0  0999 V2000\n   -1.3616    0.8027    0.0000 C   0  0  0  0  0  3  0  0  0  0  0  0\n   -2.0760    0.3902    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n   -2.0760   -0.4348    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n   -1.3616   -0.8473    0.0000 C   0  0  0  0  0  3  0  0  0  0  0  0\n   -0.6471   -0.4348    0.0000 C   0  0  0  0  0  3  0  0  0  0  0  0\n   -0.6471    0.3902    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    0.0673    0.8027    0.0000 C   0  0  0  0  0  3  0  0  0  0  0  0\n    0.0673    1.6277    0.0000 C   0  0  0  0  0  3  0  0  0  0  0  0\n   -0.6471    2.0402    0.0000 C   0  0  0  0  0  2  0  0  0  0  0  0\n    0.7816    2.0402    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    1.4961    1.6277    0.0000 C   0  0  0  0  0  3  0  0  0  0  0  0\n    2.2107    2.0402    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    2.2108    2.8652    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    1.4963    3.2777    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    0.7816    2.8652    0.0000 C   0  0  0  0  0  3  0  0  0  0  0  0\n   -1.3616    1.6277    0.0000 O   0  0  0  0  0  1  0  0  0  0  0  0\n    0.7816    0.3902    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n    0.7816   -0.4347    0.0000 C   0  0  0  0  0  2  0  0  0  0  0  0\n    0.0673   -0.8472    0.0000 C   0  0  0  0  0  1  0  0  0  0  0  0\n   -2.7905    0.8027    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n   -2.7905   -0.8473    0.0000 O   0  0  0  0  0  1  0  0  0  0  0  0\n   -3.5049    0.3901    0.0000 C   0  0  0  0  0  1  0  0  0  0  0  0\n    1.4963    4.1026    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n    0.7819    4.5153    0.0000 C   0  0  0  0  0  1  0  0  0  0  0  0\n    2.9253    3.2777    0.0000 O   0  0  0  0  0  1  0  0  0  0  0  0\n    2.9251    1.6277    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n    2.9251    0.8027    0.0000 C   0  0  0  0  0  1  0  0  0  0  0  0\n  1  2  2  0  0  0  0 \n  2  3  1  0  0  0  0 \n  3  4  2  0  0  0  0 \n  4  5  1  0  0  0  0 \n  5  6  2  0  0  0  0 \n  6  1  1  0  0  0  0 \n  6  7  1  0  0  0  0 \n  7  8  1  0  0  0  0 \n  8  9  1  1  0  0  0 \n  8 10  1  0  0  0  0 \n 11 12  1  0  0  0  0 \n 12 13  2  0  0  0  0 \n 13 14  1  0  0  0  0 \n 14 15  2  0  0  0  0 \n 10 11  2  0  0  0  0 \n 15 10  1  0  0  0  0 \n 18 19  1  0  0  0  0 \n 12 26  1  0  0  0  0 \n 26 27  1  0  0  0  0 \n 14 23  1  0  0  0  0 \n 23 24  1  0  0  0  0 \n 13 25  1  0  0  0  0 \n  9 16  1  0  0  0  0 \n  7 17  1  1  0  0  0 \n 17 18  1  0  0  0  0 \n  3 21  1  0  0  0  0 \n  2 20  1  0  0  0  0 \n 20 22  1  0  0  0  0 \nM  END\n\n","sdf","13C")
