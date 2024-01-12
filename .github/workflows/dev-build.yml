@@ -13,8 +13,8 @@ on:
     branches: [development]
 
 env:
-  DOCKER_HUB_USERNAME : ${{ secrets.DOCKER_USERNAME  }}
-  DOCKER_HUB_PASSWORD : ${{ secrets.DOCKER_PASSWORD  }}
+  DOCKER_HUB_USERNAME : ${{ secrets.DOCKER_HUB_USERNAME  }}
+  DOCKER_HUB_PASSWORD : ${{ secrets.DOCKER_HUB_PASSWORD  }}
   REPOSITORY_NAME: nmr-respredict
   REPOSITORY_NAMESPACE: nfdi4chem
   RELEASE_TAG: dev-latest
