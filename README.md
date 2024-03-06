@@ -1,0 +1,1 @@
+This implements the prediction algorithm from Jonas, E., Kuhn, S. Rapid prediction of NMR spectral properties with quantified uncertainty. J Cheminform 11, 50 (2019). https://doi.org/10.1186/s13321-019-0374-3. The code is a stripped-down version of the original code. The model has been retrained with data from nmrshiftdb2 in February 2024.
